@@ -1,29 +1,40 @@
-// api/akis-proxy.js — HTTPS → Akis :1978 relay (serverless function)
-export const config = { api: { bodyParser: false } };
+// api/akis-proxy.js — HTTPS → Akis :1978 relay (Edge Function)
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).send('POST only');
+export const config = { runtime: 'edge' };
 
-  // Optional shared secret to prevent public abuse
-  if (process.env.PROXY_SECRET && req.headers['x-proxy-secret'] !== process.env.PROXY_SECRET) {
-    return res.status(403).send('Forbidden');
+export default async function handler(request) {
+  // Only POST
+  if (request.method !== 'POST') {
+    return new Response('POST only', { status: 405 });
   }
 
-  const body = await req.text();
+  // Optional shared secret
+  const secret = process.env.PROXY_SECRET;
+  if (secret && request.headers.get('x-proxy-secret') !== secret) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
+  // Read raw body
+  const body = await request.text();
 
   try {
-    const upstream = 'http://91.184.205.124:1978';
-    const r = await fetch(upstream, {
+    const upstream = await fetch('http://91.184.205.124:1978', {
       method: 'POST',
-      headers: { 'Content-Type': 'text/xml; charset=utf-8', 'SOAPAction': '' },
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        'SOAPAction': ''
+      },
       body,
-      redirect: 'manual',
+      redirect: 'manual'
     });
-    const text = await r.text();
-    res.status(r.status || 200)
-       .setHeader('Content-Type', 'text/xml; charset=utf-8')
-       .send(text);
+
+    const text = await upstream.text();
+
+    return new Response(text, {
+      status: upstream.status || 200,
+      headers: { 'Content-Type': 'text/xml; charset=utf-8' }
+    });
   } catch (e) {
-    res.status(502).send('Upstream error: ' + (e?.message || e));
+    return new Response('Upstream error: ' + (e?.message || e), { status: 502 });
   }
 }
