@@ -1,5 +1,5 @@
-// /api/akis-proxy.js — Node serverless, NOT Edge
-export const config = { runtime: 'nodejs20.x' };
+// /api/akis-proxy.js — Node Serverless (NOT Edge)
+export const config = { runtime: 'nodejs' };
 
 const SOAP_URL = 'http://91.184.205.124:1978';
 const NS_PRINT = '/GAPAKISPRINTSIDETA';
