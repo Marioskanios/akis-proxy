@@ -36,7 +36,6 @@ const vgBlock = (vg = {}) => {
     wrap('tns:a_rec_address',    esc(vg.a_rec_address || '')) +
     wrap('tns:a_rec_area',       esc(vg.a_rec_area || '')) +
     wrap('tns:a_rec_postal',     esc(vg.a_rec_postal || '')) +   // CSV H (digits only on client side)
-    wrap('tns:a_rec_tel',        esc(vg.a_rec_tel || '')) +      // you can pass '' if you want only mobile
     wrap('tns:a_rec_mobile',     esc(vg.a_rec_mobile || '')) +
     wrap('tns:a_packages',       esc(vg.a_packages ?? '1')) +
     wrap('tns:a_weight',         esc(vg.a_weight   ?? '0.5')) +
