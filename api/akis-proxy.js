@@ -6,8 +6,8 @@ const NS_PRINT = '/GAPAKISPRINTSIDETA';
 
 const esc = (s='') => String(s).replace(/[<&>]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
 const wrap = (q, inner='') => `<${q}>${inner}</${q}>`;
-const envelope = (nsUri, body) => `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="${nsUri}">
+const envelope = (ns, body) => `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tns="${ns}">
   <soapenv:Header/><soapenv:Body>${body}</soapenv:Body>
 </soapenv:Envelope>`;
 
@@ -46,16 +46,13 @@ export default async function handler(req, res) {
     const sideta = body.payload?.akis_sideta || body.akis_sideta || body.data?.voucher_no || '';
     if (!sideta) return res.status(400).json({ ok: false, error: 'Missing akis_sideta for PRINT' });
 
-    const xml = envelope(NS_PRINT,
-      wrap('tns:PRINT', userBlock(creds) + wrap('tns:akis_sideta', esc(sideta)))
-    );
-
-    const r = await fetch(SOAP_URL, { method: 'POST', headers: { 'content-type': 'text/xml; charset=utf-8', 'soapaction': '' }, body: xml });
+    const xml = envelope(NS_PRINT, wrap('tns:PRINT', userBlock(creds) + wrap('tns:akis_sideta', esc(sideta))));
+    const r   = await fetch(SOAP_URL, { method: 'POST', headers: { 'content-type': 'text/xml; charset=utf-8', 'soapaction': '' }, body: xml });
     const txt = await r.text();
 
-    const st_flag = pick(txt, 'st_flag');
+    const st_flag  = pick(txt, 'st_flag');
     const st_title = pick(txt, 'st_title');
-    const b64 = pick(txt, 'b64_string'); // correct field for PDF
+    const b64      = pick(txt, 'b64_string'); // correct PDF field
     if (st_flag !== '1' || !b64) return res.status(400).json({ ok: false, error: st_title || 'Print failed', st_flag, raw: txt });
 
     return res.status(200).json({ ok: true, st_flag, st_title, pdf_base64: b64 });
